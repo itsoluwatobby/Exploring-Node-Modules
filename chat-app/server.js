@@ -1,5 +1,5 @@
-const net = require('node:net')
-const crypto = require('node:crypto')
+const net = require('net')
+const crypto = require('crypto')
 
 const port = 4000
 const hostname = '127.0.0.1'

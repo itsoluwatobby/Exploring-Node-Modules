@@ -1,5 +1,5 @@
-const net = require('node:net')
-const readline = require('node:readline/promises')
+const net = require('net')
+const readline = require('readline/promises')
 const process = require('process')
 const { chatApp } = require('./user')
 
