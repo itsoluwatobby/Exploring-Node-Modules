@@ -3,7 +3,7 @@ const readline = require('node:readline/promises')
 const process = require('process')
 const { chatApp } = require('./user')
 
-const port = 4000
+const port = process.env.PORT || 4000
 const hostname = '127.0.0.1'
 
 const rl = readline.createInterface({

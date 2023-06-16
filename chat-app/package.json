@@ -8,7 +8,8 @@
     "name": "oluwatobi akinola samuel"
   },
   "scripts": {
-    "start": ""
+    "start": "node server.js",
+    "dev": "node client.js"
   },
   "keywords": [
     "node",
