@@ -1,0 +1,19 @@
+{
+  "name": "chat-app",
+  "version": "1.0.0",
+  "description": "chat app with net module in node",
+  "type": "commonjs",
+  "author": {
+    "email": "itsoluwatobby@gmail.com",
+    "name": "oluwatobi akinola samuel"
+  },
+  "scripts": {
+    "start": "Ctrl+Shift+5"
+  },
+  "keywords": [
+    "node",
+    "chat",
+    "net",
+    "networking"
+  ]
+}
