@@ -1,2 +1,2 @@
-# Exploring Node Modules
+# Exploring Node Core Modules
 

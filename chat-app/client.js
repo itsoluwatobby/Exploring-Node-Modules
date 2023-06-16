@@ -1,6 +1,7 @@
 const net = require('node:net')
 const readline = require('node:readline/promises')
 const process = require('process')
+const { chatApp } = require('./user')
 
 const port = 4000
 const hostname = '127.0.0.1'
@@ -32,12 +33,10 @@ const moveCursor = (dx, dy) => {
   })
 }
 
+let id;
 
 const client = net.createConnection({host: hostname, port}, async () => {
   console.log('connected to server')
-  // const username = await rl.question('Enter your username > ')
-  // client.emit('username', username)
-  
   
   const ask = async() => {
     const message = await rl.question('Enter your message > ')
@@ -45,7 +44,7 @@ const client = net.createConnection({host: hostname, port}, async () => {
     await moveCursor(0, -1)
     // clears the current line
     await clearLine(0)
-    client.write(message)
+    client.write(`id: ${id} message: ${message}`)
   }
   ask()
 
@@ -56,7 +55,14 @@ const client = net.createConnection({host: hostname, port}, async () => {
     // clears the current line
     await clearLine(0)
     
-    console.log(data.toString('utf-8'))
+    if(data.toString('utf-8').substring(0, 2) === 'id'){
+      id = chatApp.addUser(data.toString('utf-8').substring(3))
+
+      console.log(`Your id is ${id}\n`)
+    }else{
+      
+      console.log(data.toString('utf-8'))
+    }
     
     ask()
   })

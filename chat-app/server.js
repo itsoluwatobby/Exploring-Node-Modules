@@ -1,40 +1,41 @@
 const net = require('node:net')
 const crypto = require('node:crypto')
-const { chatApp } = require('./user')
 
 const port = 4000
 const hostname = '127.0.0.1'
 
 const server = net.createServer()
 
-// array of objects
+// array of socket objects
 const clients = []
 
 server.on('connection', socket => {
-  // console.log('server on')
-  // const getuser = {}
-  const uniqueId = crypto.randomBytes(10).toString('hex')
-  // socket.on('username', (data) => {
-  //   const username = data.toString('utf-8')
-  //   const newUser = {username, userId: uniqueId}
-  //   chatApp.addUser(newUser)
-  //   getuser = chatApp.getUser(uniqueId)
-  // })
+  const uniqueId = crypto.randomBytes(5).toString('hex')
 
   console.info(`user connected with ${uniqueId}`)
 
+  clients.map((soc) => {
+    soc.socket.write(`> User ${uniqueId} joined`)
+  })
+  socket.write(`id-${uniqueId}`)
+
   socket.on('data', (data) => {
+    const stringed = data.toString('utf-8')
+    const id = stringed.split(' ')[1]
+    const message = data.toString('utf-8').substring(stringed.indexOf('message: ') + 9)
     clients.map((soc) => {
-      soc.socket.write(data)
+      soc.socket.write(`> id-${id}: ${message}`)
     })
   })
 
-  const sepSocket = {socket, socketId: uniqueId}
+  const sepSocket = {socket, id: uniqueId}
   clients.push(sepSocket)
 
   socket.on('error', () => {
-    //chatApp.removeUser(getuser?.userId)
-    console.log('Client disconnected')
+    clients.map((soc) => {
+      soc.socket.write(`> User ${uniqueId} left`)
+    })
+    //console.log('Client disconnected')
   })
 })
 
