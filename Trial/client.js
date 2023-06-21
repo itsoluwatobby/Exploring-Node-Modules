@@ -121,6 +121,9 @@ function chatAppInit(user){
       console.log()
       await clear()
       const messageReceived =  data.toString('utf-8').split(':')[1]
+
+      // condition to check if a new user joined the chat
+
       const name = data.toString('utf-8').split(':')[0] === user.username.toUpperCase() ? 'You' : user.username
       console.log(`${name}: ${messageReceived}`)
       console.log()
