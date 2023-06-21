@@ -49,7 +49,7 @@ class ChatUsers{
     const newMessage = {userId, date: this.date, msgId: this.msgId, message}
     this.chatMessage = {...newMessage}
     messageDB.setMessage([...messageDB.messages, newMessage])
-    await fsPromises.appendFile(path.join(__dirname, './messageDB.json'), JSON.stringify(messageDB.messages), (err) => {
+    await fsPromises.writeFile(path.join(__dirname, './messageDB.json'), JSON.stringify(messageDB.messages), (err) => {
       if(err) console.log('unable to save file')
     })
     return this.chatMessage

@@ -6,7 +6,11 @@ const logger = require('../logger.js');
 const { headerResponse } = require('./helpers.js');
 
 const PORT = 4000
+const CHATPORT = 4500
 const hostname = '127.0.0.1'
+
+let data = ''
+let user = {};
 
 const server = http.createServer((req, res) => {
   logger(req, res, async() => {
@@ -15,14 +19,18 @@ const server = http.createServer((req, res) => {
       res.end('Welcome all')
     }
     else if(req.url == '/login'){
-      let data = ''
       req.on('data', chunk => {
         data += chunk
       })
       req.on('end', () => {
-        console.log(data)
-        headerResponse(res, 201)
-        res.end(JSON.stringify(data))
+        try{
+          headerResponse(res, 201)
+          res.end(JSON.stringify(data))
+        }
+        catch(error){
+          headerResponse(res, 400)
+          return res.end(`Error: ${error.message}`)
+        }
       })
     }else{
      headerResponse(res, 404)
@@ -31,55 +39,59 @@ const server = http.createServer((req, res) => {
   })
 })
 
-//const server = http.createServer((req, res) => {
+const serverSocket = net.createServer()
 
+let clientSockets = []
+
+serverSocket.on('connection', async(socket) => {
+  //user = await JSON.parse(data)
+  let count = 0
+  const userData = data.toString()
+  const userId = userData.substring(userData.indexOf('"userId":')+10, userData.indexOf('"username":')-2)
+  const username = userData.substring(userData.indexOf('"username":')+12, userData.indexOf('"password":')-2)
+  // console.log(data.toString()['username'])
+  // console.log(userData)
+  // console.log(username)
+  console.log(data)
+  user = {username, userId}
+
+  console.log(`User with id ${user?.userId} connected`)
+  socket.emit(`Success, welcome ${user?.username}`)
   
-//})
-
-// server.on(async(req, res) => {
-//   if(req.url == '/login'){
-//     const user = await req.body
-//     console.log(user)
-//   }
-//})
-
-const clientSockets = []
-let user = {};
-
-// server.on('connect', (socket) => {
-//   const uniqueId = crypto.randomBytes(5).toString('hex')
-
-//   socket.on('data', data => {
-//     const userString = data.toString('utf-8').replace('{}', '')
-//     const username = userString.substring(userString.indexOf('username')+10)
-//     user = chatApp.addUser(uniqueId, username)
-//     console.log(`Registration successful\nYour credential is ${user}`)
-    
-//     console.log(`User with id ${user?.userId} connected`)
-//     socket.emit(`Success, welcome ${user?.username}`)
+  clientSockets.map(cliSoc => {
+    cliSoc.socket.write(`User: ${user.username} joined`)
+  })
   
-//     //const userString = data.toString('utf-8').replace('{}', '')
-//     const id = userString.split(' ')[1]
-//     user = chatApp.getUser(id)
-//     console.log(`User with id ${user?.userId} connected`)
+  socket.on('data', data => {
+    //socket.write(data.toString('utf-8'))
+    clientSockets.map(client => {
+      client.socket.write(data.toString('utf-8'))
+    })
+  })
 
-//     clientSockets.map(client => {
-//       client.socket.write(`User ${user?.username} joined`)
-//     })
-//   })
+  const socSub = {userId: user.userId, socket: socket}
+  clientSockets.push(socSub)
 
-//   // socket.on('data', data => {
+  socket.on('error', () => {
+    const Ids = clientSockets.filter(client => client.userId != user?.userId)
+    clientSockets = Ids
+    clientSockets.map(cliSoc => {
+      cliSoc.socket.write(`User: ${user.username} left`)
+    })
+    count = 0
+    console.log(`User ${user?.userId} left`)
+  })
+  
+}).on('error', () => {
+  console.log('Client disconnected')
+})
 
-//   //   clientSockets.map(client => {
-//   //     client.socket
-//   //   })
-//   // }
-//   const socSub = {userId: user?.userId, socket: socket}
-//   clientSockets.push(socSub)
-// }).on('error', () => {
-//   console.log('Client disconnected')
-// })
 
+// SERVER LISTENERS
 server.listen(PORT, hostname, () => {
-  console.log('server running on port', PORT)
+  console.log(`server running on port http://${hostname}/${PORT}`)
+})
+
+serverSocket.listen(CHATPORT, hostname, () => {
+  console.log(`server running on port http://${hostname}/${CHATPORT}`)
 })

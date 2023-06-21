@@ -7,6 +7,7 @@ const { clearLine, moveCursor, clear, delay } = require('./helpers.js');
 const { chatApp, allUsersDB, ChatUsers } = require('./user.js');
 
 const PORT = 4000
+const CHATPORT = 4500
 const hostname = '127.0.0.1'
 
 const endMessage = ['exit', 'quit', 'bye', 'logout']
@@ -17,23 +18,35 @@ const rl = readline.createInterface({
 
 let user = {}
 
-let loading = false
+let isLoading = false
 
 const start = async() => {
+  let username;
+
   console.info('Welcome, Enter your username Or Enter No/n to register')
-  console.log('-----------------------------------------------------\n')
-  const username = await rl.question('Enter username > ')
+  console.log('-----------------------------------------------------')
+  username = (await rl.question('Enter username > ')).toLowerCase()
   user = chatApp.getUserByUsername(username.trim())
-  
+ 
   if(!user || username[0].toLowerCase() == 'n'){
+    let password;
     await clear()
     console.log('You do not have an account, Pls sign up')
-    const username = await rl.question('Enter username > ')
-    const password = await rl.question('Enter password > ')
+    username = (await rl.question('Enter username > ')).toLowerCase()
+    user = chatApp.getUserByUsername(username.trim())
 
-    const info = {username, password}
-    loading = true
-    loading && console.log('\nLoading...')
+    while(user){
+      await clear(null, null, -2)
+      //await clear()
+      console.log('USERNAME ALREADY TAKEN')
+      username = (await rl.question('Enter username > ')).toLowerCase()
+      user = chatApp.getUserByUsername(username.trim())
+    }
+    password = await rl.question('Enter password > ')
+
+    user = await chatApp.addUser(username, password)
+    isLoading = true
+    isLoading && console.log('\nLoading...')
     await delay(2000)
     await clear(null, null, -2)
     fetch('http:127.0.0.1:4000/login', {
@@ -41,25 +54,36 @@ const start = async() => {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(info)
+      body: JSON.stringify(user)
     })
     .then(response => response.json())
     .then(async(data) => {
       const res = JSON.parse(data)
-      user = await chatApp.addUser(res?.username, res?.password)
-      console.log(`\nWelcome ${user?.username}, your Id: ${user?.userId}`)
-      chatAppInit(user)
+      // console.log(`\nWelcome ${user?.username}, your Id: ${user?.userId}`)
+      chatAppInit(res)
     })
     .catch(error => {
       console.log(`\nServer is currently down: Error > ${error.message}`)
-    }).finally(() => loading = false)
+    }).finally(() => isLoading = false)
   }
   else{
     const password = await rl.question('Enter password > ')
-    user = chatApp.getUserByPassword(password.trim())
-    if(user){
-      console.log(`\nWelcome ${user?.username} your Id: ${user?.userId}`)
-      chatAppInit(user)
+    if(user?.password === password){
+      console.log(user)
+      const res = await fetch('http:127.0.0.1:4000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(user)
+      })
+      if(res.ok){
+        /*START CHAT APP APPLICATION */
+        chatAppInit(user)
+      }
+      else{
+        console.log('\nServer is currently down')
+      }
     }
     else{
       console.error('\nBad credentials')
@@ -69,23 +93,39 @@ const start = async() => {
 }
 start()
 
-
-const message = async () =>{
-  const entry = await rl.question('Enter your message > ')
-  await clear()
-  console.log(entry)
-  if(endMessage.includes(entry.toLowerCase())){
-    console.log('\nByeee')
-    process.exit(1)
-  }
-  message()
-}
-message()
-
 function chatAppInit(user){
   const client = net.createConnection({ 
-    port: PORT, host: hostname }, () => {
-  
+    port: CHATPORT, host: hostname }, () => {
+    
+    console.log(`\nWelcome ${user?.username} your Id: ${user?.userId}`)
+    
+    const message = async () =>{
+      const entry = await rl.question('Enter your message > ')
+      await clear()
+      if(endMessage.includes(entry.toLowerCase())){
+        console.log('Logging out...')
+        await delay(3000)
+        await clear(null, null, -2)
+        console.log('\nByeee')
+        await clear()
+        console.log('See you again soon🥳')
+        process.exit(1)
+      }
+      else{
+        client.write(`${user.username.toUpperCase()}: ${entry}`)
+      }
+    }
+    message()
+
+    client.on('data', async(data) => {
+      console.log()
+      await clear()
+      const messageReceived =  data.toString('utf-8').split(':')[1]
+      const name = data.toString('utf-8').split(':')[0] === user.username.toUpperCase() ? 'You' : user.username
+      console.log(`${name}: ${messageReceived}`)
+      console.log()
+      message()
+    })
     
     client.on('close', () => {
       console.log('Server disconnected')
