@@ -2,7 +2,7 @@ const process = require('node:process');
 const fsPromises = require('node:fs/promises')
 const path = require('node:path')
 
-const endMessage = ['exit', 'quit', 'bye', 'logout']
+const endMessage = ['.exit', '.quit', '.bye', '.logout']
 
 const moveCursor = (dx, dy) => {
   return new Promise((resolve) => {

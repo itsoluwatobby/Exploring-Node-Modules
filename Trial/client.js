@@ -3,7 +3,7 @@ const process = require('process');
 const net = require('node:net');
 
 //const http from 'node:http'
-const { clearLine, moveCursor, clear, delay } = require('./helpers.js');
+const { clear, delay, moveCursor } = require('./helpers.js');
 const { chatApp, allUsersDB, ChatUsers } = require('./user.js');
 
 const PORT = 4000
@@ -24,7 +24,7 @@ const start = async() => {
   let username;
 
   console.info('Welcome, Enter your username Or Enter No/n to register')
-  console.log('-----------------------------------------------------')
+  //console.log('-----------------------------------------------------')
   username = (await rl.question('Enter username > ')).toLowerCase()
   user = chatApp.getUserByUsername(username.trim())
  
@@ -59,7 +59,6 @@ const start = async() => {
     .then(response => response.json())
     .then(async(data) => {
       const res = JSON.parse(data)
-      // console.log(`\nWelcome ${user?.username}, your Id: ${user?.userId}`)
       chatAppInit(res)
     })
     .catch(error => {
@@ -69,7 +68,6 @@ const start = async() => {
   else{
     const password = await rl.question('Enter password > ')
     if(user?.password === password){
-      console.log(user)
       const res = await fetch('http:127.0.0.1:4000/login', {
         method: 'POST',
         headers: {
@@ -95,8 +93,9 @@ start()
 
 function chatAppInit(user){
   const client = net.createConnection({ 
-    port: CHATPORT, host: hostname }, () => {
+    port: CHATPORT, host: hostname }, async() => {
     
+    await clear(null, null, -5)
     console.log(`\nWelcome ${user?.username} your Id: ${user?.userId}`)
     
     const message = async () =>{
@@ -104,7 +103,7 @@ function chatAppInit(user){
       await clear()
       if(endMessage.includes(entry.toLowerCase())){
         console.log('Logging out...')
-        await delay(3000)
+        await delay(2500)
         await clear(null, null, -2)
         console.log('\nByeee')
         await clear()
@@ -121,12 +120,17 @@ function chatAppInit(user){
       console.log()
       await clear()
       const messageReceived =  data.toString('utf-8').split(':')[1]
+      const name = data.toString('utf-8').split(':')[0] === user.username.toUpperCase() ? 'You' : data.toString('utf-8').split(':')[0]
 
-      // condition to check if a new user joined the chat
+      if(!name.startsWith('User')){
+        if(name == 'You') await moveCursor(35, 0)
+        console.log(`${name}: ${messageReceived}`)
+      }else{
+        console.log()
+        console.log(data.toString('utf-8'))
+        console.log()
+      }
 
-      const name = data.toString('utf-8').split(':')[0] === user.username.toUpperCase() ? 'You' : user.username
-      console.log(`${name}: ${messageReceived}`)
-      console.log()
       message()
     })
     

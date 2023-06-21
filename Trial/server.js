@@ -10,9 +10,9 @@ const CHATPORT = 4500
 const hostname = '127.0.0.1'
 
 let data = ''
-let user = {};
 
 const server = http.createServer((req, res) => {
+  data = ''
   logger(req, res, async() => {
     if(req.url == '/'){
       headerResponse(res)
@@ -44,22 +44,17 @@ const serverSocket = net.createServer()
 let clientSockets = []
 
 serverSocket.on('connection', async(socket) => {
-  //user = await JSON.parse(data)
-  let count = 0
+
   const userData = data.toString()
   const userId = userData.substring(userData.indexOf('"userId":')+10, userData.indexOf('"username":')-2)
   const username = userData.substring(userData.indexOf('"username":')+12, userData.indexOf('"password":')-2)
-  // console.log(data.toString()['username'])
-  // console.log(userData)
-  // console.log(username)
-  console.log(data)
-  user = {username, userId}
+  const user = {username, userId}
 
-  console.log(`User with id ${user?.userId} connected`)
+  // console.log(`User with id ${user?.userId} connected`)
   socket.emit(`Success, welcome ${user?.username}`)
   
   clientSockets.map(cliSoc => {
-    cliSoc.socket.write(`User: ${user.username} joined`)
+    cliSoc.socket.write(`User ${user.username} joined`)
   })
   
   socket.on('data', data => {
@@ -71,14 +66,15 @@ serverSocket.on('connection', async(socket) => {
 
   const socSub = {userId: user.userId, socket: socket}
   clientSockets.push(socSub)
+  // console.log('HEEEEHHEEE: ', clientSockets.length)
 
   socket.on('error', () => {
-    const Ids = clientSockets.filter(client => client.userId != user?.userId)
-    clientSockets = Ids
+    const Ids = clientSockets.filter(client => client.userId !== user?.userId)
+    // clientSockets = Ids
+    // console.log('HHHHHH: ', Ids.length)
     clientSockets.map(cliSoc => {
       cliSoc.socket.write(`User: ${user.username} left`)
     })
-    count = 0
     console.log(`User ${user?.userId} left`)
   })
   
